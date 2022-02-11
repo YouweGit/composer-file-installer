@@ -10,12 +10,12 @@ declare(strict_types=1);
 namespace Youwe\Composer\Tests;
 
 use Composer\IO\IOInterface;
-use Youwe\FileMapping\FileMappingInterface;
-use Youwe\FileMapping\FileMappingReaderInterface;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\TestCase;
 use PHPUnit_Framework_MockObject_MockObject;
 use Youwe\Composer\FileInstaller;
+use Youwe\FileMapping\FileMappingInterface;
+use Youwe\FileMapping\FileMappingReaderInterface;
 
 /**
  * @coversDefaultClass \Youwe\Composer\FileInstaller

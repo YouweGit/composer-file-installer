@@ -10,9 +10,9 @@ declare(strict_types=1);
 namespace Youwe\Composer;
 
 use Composer\IO\IOInterface;
+use SplFileObject;
 use Youwe\FileMapping\FileMappingInterface;
 use Youwe\FileMapping\FileMappingReaderInterface;
-use SplFileObject;
 
 class FileInstaller
 {
