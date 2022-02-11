@@ -20,10 +20,10 @@
         "youwe/file-mapping": "dev-master"
     },
     "require-dev": {
-        "phpunit/phpunit": "@stable",
-        "kint-php/kint": "@stable",
         "composer/composer": "@stable",
-        "mikey179/vfsstream": "@stable"
+        "kint-php/kint": "@stable",
+        "mikey179/vfsstream": "@stable",
+        "phpunit/phpunit": "@stable"
     },
     "repositories": [
         {
@@ -64,8 +64,6 @@
     "archive": {
         "exclude": [
             "tests",
-            "phpcs.xml",
-            "phpmd.xml",
             "phpunit.xml",
             ".gitignore"
         ]
