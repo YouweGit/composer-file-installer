@@ -4,11 +4,11 @@
     "type": "library",
     "license": "MIT",
     "prefer-stable": true,
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "authors": [
         {
             "name": "Youwe B.V.",
-            "email": "contact@youweagency.com"
+            "email": "info@youweagency.com"
         },
         {
             "name": "Jan-Marten de Boer",
@@ -17,7 +17,7 @@
     ],
     "require": {
         "php": "^7.2",
-        "youwe/file-mapping": "dev-master"
+        "youwe/file-mapping": "~1.1.0"
     },
     "require-dev": {
         "composer/composer": "@stable",
@@ -25,32 +25,6 @@
         "mikey179/vfsstream": "@stable",
         "phpunit/phpunit": "@stable"
     },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/YouweGit/coding-standard"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/YouweGit/coding-standard-phpstorm"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/YouweGit/composer-dependency-installer"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/YouweGit/composer-file-installer"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/YouweGit/file-mapping"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/YouweGit/testing-suite"
-        }
-    ],
     "autoload": {
         "psr-4": {
             "Youwe\\Composer\\": "src"
