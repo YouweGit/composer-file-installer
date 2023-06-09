@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Youwe\Composer;
 
 use Composer\IO\IOInterface;
+use RuntimeException;
 use SplFileObject;
 use Youwe\FileMapping\FileMappingInterface;
 use Youwe\FileMapping\FileMappingReaderInterface;
@@ -67,8 +68,15 @@ class FileInstaller
      */
     public function installFile(FileMappingInterface $mapping)
     {
+        $destination = $mapping->getDestination();
+        $parent = dirname($destination);
+
+        if (!is_dir($parent) && !mkdir($parent, 0755, true) && !is_dir($parent)) {
+            throw new RuntimeException("Directory \"$parent\" could not be created");
+        }
+
         $inputFile  = new SplFileObject($mapping->getSource(), 'r');
-        $targetFile = new SplFileObject($mapping->getDestination(), 'w+');
+        $targetFile = new SplFileObject($destination, 'w+');
 
         foreach ($inputFile as $input) {
             $targetFile->fwrite($input);
