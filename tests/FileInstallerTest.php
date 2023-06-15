@@ -85,6 +85,51 @@ class FileInstallerTest extends TestCase
 
     /**
      * @return void
+     * @covers ::installFile
+     */
+    public function testInstallFileWhenDestinationPathNotExistsYet()
+    {
+        /** @var FileMappingReaderInterface $reader */
+        $reader = $this->createMock(FileMappingReaderInterface::class);
+        $installer = new FileInstaller($reader);
+
+        $fs = vfsStream::setup(
+            sha1(__METHOD__),
+            null,
+            [
+                'source' => [
+                    'foo.php' => 'Foo'
+                ],
+                'destination' => []
+            ]
+        );
+
+        /** @var FileMappingInterface|PHPUnit_Framework_MockObject_MockObject $mapping */
+        $mapping = $this->createMock(FileMappingInterface::class);
+        $mapping
+            ->expects($this->once())
+            ->method('getSource')
+            ->willReturn(
+                $fs->getChild('source/foo.php')->url()
+            );
+
+        $mapping
+            ->expects($this->once())
+            ->method('getDestination')
+            ->willReturn(
+                $fs->getChild('destination')->url() . '/path/to/foo.php'
+            );
+
+        $installer->installFile($mapping);
+
+        $this->assertStringEqualsFile(
+            $fs->getChild('destination/path/to/foo.php')->url(),
+            'Foo'
+        );
+    }
+
+    /**
+     * @return void
      * @covers ::install
      */
     public function testInstall()
