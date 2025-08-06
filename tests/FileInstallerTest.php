@@ -12,8 +12,9 @@ namespace Youwe\Composer\Tests;
 use Composer\IO\IOInterface;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use Youwe\Composer\FileInstaller;
 use Youwe\FileMapping\FileMappingInterface;
 use Youwe\FileMapping\FileMappingReaderInterface;
@@ -42,7 +43,7 @@ class FileInstallerTest extends TestCase
             null,
             [
                 'source' => [
-                    'foo.php' => 'Foo',
+                    'foo.php' => "Lorum ipsum\nDolor sit amet",
                 ],
                 'destination' => [],
             ]
@@ -51,14 +52,14 @@ class FileInstallerTest extends TestCase
         /** @var FileMappingInterface&MockObject $mapping */
         $mapping = $this->createMock(FileMappingInterface::class);
         $mapping
-            ->expects($this->once())
+            ->expects($this->atLeastOnce())
             ->method('getSource')
             ->willReturn(
                 $fs->getChild('source/foo.php')->url()
             );
 
         $mapping
-            ->expects($this->once())
+            ->expects($this->atLeastOnce())
             ->method('getDestination')
             ->willReturn(
                 $fs->getChild('destination')->url() . '/foo.php'
@@ -68,7 +69,7 @@ class FileInstallerTest extends TestCase
 
         $this->assertStringEqualsFile(
             $fs->getChild('destination/foo.php')->url(),
-            'Foo'
+            "Lorum ipsum\nDolor sit amet"
         );
     }
 
@@ -83,7 +84,7 @@ class FileInstallerTest extends TestCase
             null,
             [
                 'source' => [
-                    'foo.php' => 'Foo',
+                    'foo.php' => "Lorum ipsum\nDolor sit amet",
                 ],
                 'destination' => [],
             ]
@@ -92,14 +93,14 @@ class FileInstallerTest extends TestCase
         /** @var FileMappingInterface&MockObject $mapping */
         $mapping = $this->createMock(FileMappingInterface::class);
         $mapping
-            ->expects($this->once())
+            ->expects($this->atLeastOnce())
             ->method('getSource')
             ->willReturn(
                 $fs->getChild('source/foo.php')->url()
             );
 
         $mapping
-            ->expects($this->once())
+            ->expects($this->atLeastOnce())
             ->method('getDestination')
             ->willReturn(
                 $fs->getChild('destination')->url() . '/path/to/foo.php'
@@ -109,7 +110,56 @@ class FileInstallerTest extends TestCase
 
         $this->assertStringEqualsFile(
             $fs->getChild('destination/path/to/foo.php')->url(),
-            'Foo'
+            "Lorum ipsum\nDolor sit amet"
+        );
+    }
+
+    public function testMergeLineByLine(): void
+    {
+        /** @var FileMappingReaderInterface&MockObject $reader */
+        $reader    = $this->createMock(FileMappingReaderInterface::class);
+        $installer = new FileInstaller($reader);
+
+        $fs = vfsStream::setup(
+            sha1(__METHOD__),
+            null,
+            [
+                'source' => [
+                    'dotgitignore' => "vendor\ncomposer.lock\n\n.env.local\n.env.*.local\nother.txt\n# suggestion.txt\n# suggestion2.txt\n",
+                ],
+                'destination' => [
+                    '.gitignore' => "composer.lock\nvendor\n\napp.config.local.php\nsuggestion.txt\n# other.txt",
+                ],
+            ]
+        );
+
+        /** @var FileMappingInterface&MockObject $mapping */
+        $mapping = $this->createMock(FileMappingInterface::class);
+        $mapping
+            ->expects($this->atLeastOnce())
+            ->method('getSource')
+            ->willReturn(
+                $fs->getChild('source/dotgitignore')->url()
+            );
+
+        $mapping
+            ->expects($this->atLeastOnce())
+            ->method('getDestination')
+            ->willReturn(
+                $fs->getChild('destination/.gitignore')->url()
+            );
+
+        $installer->mergeLineByLine($mapping);
+
+        // - It will leave the composer.lock and vendor as is, these exist in both template and destination (albeit in different order)
+        // - It will leave the app.config.local.php as is, that exist only in destination
+        // - It will leave the (uncommented) suggestion.txt, that exist commented in template and was uncommented in destination already
+        // - It will leave the (commented) other.txt, that exist in template but was commented in destination
+        // - It will add .env.local and .env.*.local, that exist in template but wasn't in the destination yet
+        // - It will add the # suggestion2.txt, that exist in template but wasn't in the destination yet
+        $this->assertSame(
+            "composer.lock\nvendor\n\napp.config.local.php\nsuggestion.txt\n# other.txt\n.env.local\n.env.*.local\n# suggestion2.txt\n",
+            file_get_contents($fs->getChild('destination/.gitignore')->url())
         );
     }
 
@@ -124,57 +174,95 @@ class FileInstallerTest extends TestCase
             null,
             [
                 'source' => [
-                    'foo.php' => 'Foo'
+                    'foo.php' => 'Foo',
+                    'bar.php' => 'Bar',
+                    'other.php' => 'Other',
+                    'dotgitignore' => '.env.local',
                 ],
-                'destination' => []
+                'destination' => [
+                    'bar.php' => 'Custom',
+                    'other.php' => 'Overwrite me',
+                    '.gitignore' => 'vendor',
+                ]
             ]
         );
 
-        /** @var FileMappingInterface&MockObject $mapping */
-        $mapping = $this->createMock(FileMappingInterface::class);
-        $mapping
-            ->expects($this->once())
-            ->method('getSource')
-            ->willReturn(
-                $fs->getChild('source/foo.php')->url()
-            );
+        $createMapping = function (array $options, string $source, string $destination) use ($fs): FileMappingInterface {
+            $mapping = $this->createMock(FileMappingInterface::class);
+            $mapping
+                ->expects($this->atLeastOnce())
+                ->method('getOptions')
+                ->willReturn($options);
+            $mapping
+                ->expects($this->any())
+                ->method('getSource')
+                ->willReturn($fs->getChild('source')->url() . '/' . $source);
+            $mapping
+                ->expects($this->atLeastOnce())
+                ->method('getDestination')
+                ->willReturn($fs->getChild('destination')->url() . '/' . $destination);
+            return $mapping;
+        };
 
-        $mapping
-            ->expects($this->exactly(3))
-            ->method('getDestination')
-            ->willReturn(
-                $fs->getChild('destination')->url() . '/foo.php'
-            );
+        $mapping1 = $createMapping([], 'foo.php', 'foo.php');
+        $mapping2 = $createMapping([], 'bar.php', 'bar.php');
+        $mapping3 = $createMapping([FileInstaller::MAPPING_OPTION_FORCE_OVERWRITE], 'other.php', 'other.php');
+        $mapping4 = $createMapping([FileInstaller::MAPPING_OPTION_MERGE_LINE_BY_LINE], 'dotgitignore', '.gitignore');
 
-        $mapping
-            ->expects($this->once())
-            ->method('getRelativeDestination')
-            ->willReturn('foo.php');
+        $reader
+            ->expects($this->exactly(5))
+            ->method('valid')
+            ->willReturnOnConsecutiveCalls(true, true, true, true, false);
 
         $reader
             ->expects($this->exactly(4))
-            ->method('valid')
-            ->willReturnOnConsecutiveCalls(true, false, true, false);
-
-        $reader
-            ->expects($this->exactly(2))
             ->method('current')
-            ->willReturn($mapping);
+            ->willReturnOnConsecutiveCalls($mapping1, $mapping2, $mapping3, $mapping4);
 
-        /** @var IOInterface|PHPUnit_Framework_MockObject_MockObject $io */
+        /** @var IOInterface&MockObject $io */
         $io = $this->createMock(IOInterface::class);
         $io
-            ->expects($this->once())
+            ->expects($this->exactly(4))
             ->method('write')
             ->with($this->isString());
 
         $installer->install($io);
 
-        $this->assertStringEqualsFile(
-            $fs->getChild('destination/foo.php')->url(),
-            'Foo'
+        $this->assertSame(
+            'Foo',
+            file_get_contents($fs->getChild('destination/foo.php')->url()),
+            'foo.php should be created'
         );
+        $this->assertSame(
+            'Custom',
+            file_get_contents($fs->getChild('destination/bar.php')->url()),
+            'Existing bar.php should not be overwritten'
+        );
+        $this->assertSame(
+            'Other',
+            file_get_contents($fs->getChild('destination/other.php')->url()),
+            'Existing other.php should be replaced'
+        );
+        $this->assertSame(
+            "vendor\n.env.local\n",
+            file_get_contents($fs->getChild('destination/.gitignore')->url()),
+            'Existing .gitignore should be merged'
+        );
+    }
 
-        $installer->install($io);
+    #[TestWith(['hello world', 'hello world'], 'Plain text')]
+    #[TestWith(['  some line  ', 'some line'], 'Normal line is trimmed')]
+    #[TestWith([' # this is commented  ', 'this is commented'], 'Left # is stripped')]
+    #[TestWith(['# this is commented #', 'this is commented #'], 'Right # is not stripped')]
+    #[TestWith([' // php comment  ', 'php comment'], 'Left // is stripped')]
+    #[TestWith([' /** php docblock */ ', 'php docblock'], '/** and */ are stripped')]
+    #[TestWith([' /* php comment 2 */ ', 'php comment 2'], '/* and */ are stripped')]
+    #[TestWith(['ended comment */ ', 'ended comment'], 'ending */ is stripped')]
+    #[TestWith([' * continued comment block ', 'continued comment block'], 'Left * is stripped')]
+    #[TestWith([' * continued ending block */ ', 'continued ending block'], 'Left * and ending */ is stripped')]
+    #[TestWith([' $ other weird characters % are not stripped @ ', '$ other weird characters % are not stripped @'], 'Other chars are not stripped')]
+    public function testStripCommentFromLine(string $line, string $expected): void
+    {
+        $this->assertSame($expected, FileInstaller::stripCommentFromLine($line));
     }
 }
