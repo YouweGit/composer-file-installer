@@ -17,18 +17,14 @@ use Youwe\FileMapping\FileMappingReaderInterface;
 
 class FileInstaller
 {
-    /** @var FileMappingReaderInterface */
-    private $mappingReader;
-
     /**
      * Constructor.
      *
      * @param FileMappingReaderInterface $mappingReader
      */
-    public function __construct(FileMappingReaderInterface $mappingReader)
-    {
-        $this->mappingReader = $mappingReader;
-    }
+    public function __construct(
+        private readonly FileMappingReaderInterface $mappingReader,
+    ) {}
 
     /**
      * Install the deployer files.
@@ -39,7 +35,7 @@ class FileInstaller
      *
      * @SuppressWarnings(PHPMD.ShortVariable)
      */
-    public function install(IOInterface $io)
+    public function install(IOInterface $io): void
     {
         foreach ($this->mappingReader as $mapping) {
             if (file_exists($mapping->getDestination())) {
@@ -51,7 +47,7 @@ class FileInstaller
             $io->write(
                 sprintf(
                     '<info>Installed:</info> %s',
-                    $mapping->getRelativeDestination()
+                    $mapping->getRelativeDestination(),
                 )
             );
         }
@@ -66,7 +62,7 @@ class FileInstaller
      *
      * @SuppressWarnings(PHPMD.ShortVariable)
      */
-    public function installFile(FileMappingInterface $mapping)
+    public function installFile(FileMappingInterface $mapping): void
     {
         $destination = $mapping->getDestination();
         $parent = dirname($destination);

@@ -16,14 +16,13 @@
         }
     ],
     "require": {
-        "php": "^7.2 || ^8.0",
+        "php": "^8.1",
         "youwe/file-mapping": "~1.1.0"
     },
     "require-dev": {
-        "composer/composer": "@stable",
-        "kint-php/kint": "@stable",
-        "mikey179/vfsstream": "@stable",
-        "phpunit/phpunit": "@stable"
+        "composer/composer": "^2.0",
+        "mikey179/vfsstream": "^1.6",
+        "phpunit/phpunit": "^12.3"
     },
     "autoload": {
         "psr-4": {

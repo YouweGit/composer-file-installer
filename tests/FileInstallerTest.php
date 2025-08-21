@@ -11,40 +11,29 @@ namespace Youwe\Composer\Tests;
 
 use Composer\IO\IOInterface;
 use org\bovigo\vfs\vfsStream;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use PHPUnit_Framework_MockObject_MockObject;
+use PHPUnit\Framework\MockObject\MockObject;
 use Youwe\Composer\FileInstaller;
 use Youwe\FileMapping\FileMappingInterface;
 use Youwe\FileMapping\FileMappingReaderInterface;
 
-/**
- * @coversDefaultClass \Youwe\Composer\FileInstaller
- */
+#[CoversClass(FileInstaller::class)]
 class FileInstallerTest extends TestCase
 {
-    /**
-     * @return void
-     *
-     * @covers ::__construct
-     */
-    public function testConstructor()
+    public function testConstructor(): void
     {
-        /** @noinspection PhpParamsInspection */
+        /** @var FileMappingReaderInterface&MockObject $reader */
+        $reader = $this->createMock(FileMappingReaderInterface::class);
         $this->assertInstanceOf(
             FileInstaller::class,
-            new FileInstaller(
-                $this->createMock(FileMappingReaderInterface::class)
-            )
+            new FileInstaller($reader)
         );
     }
 
-    /**
-     * @return void
-     * @covers ::installFile
-     */
-    public function testInstallFile()
+    public function testInstallFile(): void
     {
-        /** @var FileMappingReaderInterface $reader */
+        /** @var FileMappingReaderInterface&MockObject $reader */
         $reader    = $this->createMock(FileMappingReaderInterface::class);
         $installer = new FileInstaller($reader);
 
@@ -53,13 +42,13 @@ class FileInstallerTest extends TestCase
             null,
             [
                 'source' => [
-                    'foo.php' => 'Foo'
+                    'foo.php' => 'Foo',
                 ],
-                'destination' => []
+                'destination' => [],
             ]
         );
 
-        /** @var FileMappingInterface|PHPUnit_Framework_MockObject_MockObject $mapping */
+        /** @var FileMappingInterface&MockObject $mapping */
         $mapping = $this->createMock(FileMappingInterface::class);
         $mapping
             ->expects($this->once())
@@ -83,13 +72,9 @@ class FileInstallerTest extends TestCase
         );
     }
 
-    /**
-     * @return void
-     * @covers ::installFile
-     */
-    public function testInstallFileWhenDestinationPathNotExistsYet()
+    public function testInstallFileWhenDestinationPathNotExistsYet(): void
     {
-        /** @var FileMappingReaderInterface $reader */
+        /** @var FileMappingReaderInterface&MockObject $reader */
         $reader = $this->createMock(FileMappingReaderInterface::class);
         $installer = new FileInstaller($reader);
 
@@ -98,13 +83,13 @@ class FileInstallerTest extends TestCase
             null,
             [
                 'source' => [
-                    'foo.php' => 'Foo'
+                    'foo.php' => 'Foo',
                 ],
-                'destination' => []
+                'destination' => [],
             ]
         );
 
-        /** @var FileMappingInterface|PHPUnit_Framework_MockObject_MockObject $mapping */
+        /** @var FileMappingInterface&MockObject $mapping */
         $mapping = $this->createMock(FileMappingInterface::class);
         $mapping
             ->expects($this->once())
@@ -128,13 +113,9 @@ class FileInstallerTest extends TestCase
         );
     }
 
-    /**
-     * @return void
-     * @covers ::install
-     */
-    public function testInstall()
+    public function testInstall(): void
     {
-        /** @var FileMappingReaderInterface|PHPUnit_Framework_MockObject_MockObject $reader */
+        /** @var FileMappingReaderInterface&MockObject $reader */
         $reader    = $this->createMock(FileMappingReaderInterface::class);
         $installer = new FileInstaller($reader);
 
@@ -149,7 +130,7 @@ class FileInstallerTest extends TestCase
             ]
         );
 
-        /** @var FileMappingInterface|PHPUnit_Framework_MockObject_MockObject $mapping */
+        /** @var FileMappingInterface&MockObject $mapping */
         $mapping = $this->createMock(FileMappingInterface::class);
         $mapping
             ->expects($this->once())
@@ -185,7 +166,7 @@ class FileInstallerTest extends TestCase
         $io
             ->expects($this->once())
             ->method('write')
-            ->with($this->isType('string'));
+            ->with($this->isString());
 
         $installer->install($io);
 
